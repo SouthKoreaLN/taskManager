@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Task Manager with Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+
+        #taskInputSection, #currentTaskSection {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin: 5px;
+            width: calc(100% - 22px);
+        }
+
+        button {
+            padding: 10px;
+            width: 100%;
+        }
+
+        #currentTask {
+            font-size: 24px;
+            padding: 30px;
+            background: white;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+
+        #taskCounter {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="taskInputSection">
+        <input type="text" id="task1" placeholder="Enter Task 1">
+        <input type="text" id="task2" placeholder="Enter Task 2">
+        <input type="text" id="task3" placeholder="Enter Task 3">
+        <button onclick="startDay()">Start Day</button>
+    </div>
+    <div id="currentTaskSection" style="display:none;">
+        <div id="currentTask"></div>
+        <button onclick="completeTask()">Task Completed</button>
+        <button onclick="addMoreTasks()" style="display:none;">Add 3 More Tasks</button>
+    </div>
+    <div id="taskCounter">Tasks completed: 0</div>
+    <div id="calendar"></div>
+
+</body>
+    <script>
+        let tasks = [];
+        let currentTaskIndex = 0;
+        let tasksCompleted = 0;
+    
+        // Load tasks and render calendar when the page loads
+        window.onload = function() {
+            fetch('/tasks')
+            .then(response => response.json())
+            .then(data => {
+                // Assuming the data is an object with dates as keys and task counts as values
+                for (const [date, count] of Object.entries(data)) {
+                    localStorage.setItem(date, count);
+                }
+                renderCalendar();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function startDay() {
+            tasks = [
+                document.getElementById('task1').value,
+                document.getElementById('task2').value,
+                document.getElementById('task3').value
+            ].filter(task => task.trim() !== '');
+            currentTaskIndex = 0;
+            if (tasks.length > 0) {
+                document.getElementById('taskInputSection').style.display = 'none';
+                document.getElementById('currentTaskSection').style.display = 'block';
+                updateCurrentTask();
+            } else {
+                alert('Please enter at least one task.');
+            }
+        }
+
+        function updateCurrentTask() {
+            if (currentTaskIndex < tasks.length) {
+                document.getElementById('currentTask').textContent = tasks[currentTaskIndex];
+            } else {
+                document.getElementById('currentTask').textContent = 'All tasks completed!';
+                document.getElementById('currentTaskSection').getElementsByTagName('button')[0].style.display = 'none';
+                document.getElementById('currentTaskSection').getElementsByTagName('button')[1].style.display = 'block';
+            }
+        }
+    
+    
+        function completeTask() {
+            tasksCompleted++;
+            document.getElementById('taskCounter').textContent = 'Tasks completed: ' + tasksCompleted;
+            currentTaskIndex++;
+            updateCurrentTask();
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todayTasks = parseInt(localStorage.getItem(today) || '0', 10) + 1;
+            localStorage.setItem(today, todayTasks.toString());
+    
+            // Save the updated count to the server
+            fetch('/tasks', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ [today]: todayTasks }),
+            })
+            .then(response => response.text())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+    
+            renderCalendar();
+        }
+    
+        function addMoreTasks() {
+            document.getElementById('taskInputSection').style.display = 'block';
+            document.getElementById('currentTaskSection').style.display = 'none';
+            document.getElementById('task1').value = '';
+            document.getElementById('task2').value = '';
+            document.getElementById('task3').value = '';
+            document.getElementById('currentTaskSection').getElementsByTagName('button')[1].style.display = 'none';
+            document.getElementById('currentTaskSection').getElementsByTagName('button')[0].style.display = 'block';
+            currentTaskIndex = 0;
+            tasks = [];
+        }
+        function renderCalendar() {
+            const now = new Date();
+            const monthDays = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+            let calendarHtml = '<table><tr>';
+
+            for (let i = 1; i <= monthDays; i++) {
+                const day = new Date(now.getFullYear(), now.getMonth(), i);
+                const formattedDate = day.toISOString().split('T')[0];
+
+                const taskData = localStorage.getItem(formattedDate) || 0;
+                const bgColor = taskData >= 3 ? 'style="background-color: red;"' : '';
+
+                calendarHtml += `<td ${bgColor}>${i}</td>`;
+
+                if (day.getDay() === 6) {
+                    calendarHtml += '</tr><tr>';
+                }
+            }
+
+            calendarHtml += '</tr></table>';
+            document.getElementById('calendar').innerHTML = calendarHtml;
+        }
+
+        renderCalendar();
+    
+    </script>
+</html>
+
