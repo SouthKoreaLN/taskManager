@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Task Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+
+        #taskInputSection, #currentTaskSection {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin: 5px;
+            width: calc(100% - 22px);
+        }
+
+        button {
+            padding: 10px;
+            width: 100%;
+        }
+
+        #currentTask {
+            font-size: 24px;
+            padding: 30px;
+            background: white;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            text-align: center;
+        }
+
+        #taskCounter {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="taskInputSection">
+        <input type="text" id="task1" placeholder="Enter Task 1">
+        <input type="text" id="task2" placeholder="Enter Task 2">
+        <input type="text" id="task3" placeholder="Enter Task 3">
+        <button onclick="startDay()">Start Day</button>
+    </div>
+    <div id="currentTaskSection" style="display:none;">
+        <div id="currentTask"></div>
+        <button onclick="completeTask()">Task Completed</button>
+        <button onclick="addMoreTasks()" style="display:none;">Add 3 More Tasks</button>
+    </div>
+    <div id="taskCounter">Tasks completed: 0</div>
+
+    <script>
+        let tasks = [];
+        let currentTaskIndex = 0;
+        let tasksCompleted = 0;
+
+        function startDay() {
+            tasks = [
+                document.getElementById('task1').value,
+                document.getElementById('task2').value,
+                document.getElementById('task3').value
+            ].filter(task => task.trim() !== '');
+            currentTaskIndex = 0;
+            if (tasks.length > 0) {
+                document.getElementById('taskInputSection').style.display = 'none';
+                document.getElementById('currentTaskSection').style.display = 'block';
+                updateCurrentTask();
+            } else {
+                alert('Please enter at least one task.');
+            }
+        }
+
+        function updateCurrentTask() {
+            if (currentTaskIndex < tasks.length) {
+                document.getElementById('currentTask').textContent = tasks[currentTaskIndex];
+            } else {
+                document.getElementById('currentTask').textContent = 'All tasks completed!';
+                document.getElementById('currentTaskSection').getElementsByTagName('button')[0].style.display = 'none';
+                document.getElementById('currentTaskSection').getElementsByTagName('button')[1].style.display = 'block';
+            }
+        }
+
+        function completeTask() {
+            tasksCompleted++;
+            document.getElementById('taskCounter').textContent = 'Tasks completed: ' + tasksCompleted;
+            currentTaskIndex++;
+            updateCurrentTask();
+        }
+
+        function addMoreTasks() {
+            document.getElementById('taskInputSection').style.display = 'block';
+            document.getElementById('currentTaskSection').style.display = 'none';
+            document.getElementById('task1').value = '';
+            document.getElementById('task2').value = '';
+            document.getElementById('task3').value = '';
+            document.getElementById('currentTaskSection').getElementsByTagName('button')[1].style.display = 'none';
+            document.getElementById('currentTaskSection').getElementsByTagName('button')[0].style.display = 'block';
+        }
+    </script>
+</body>
+</html>
